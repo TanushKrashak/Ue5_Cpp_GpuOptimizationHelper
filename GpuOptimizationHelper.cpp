@@ -66,14 +66,11 @@ void AGpuOptimizationHelper::DumpAllStaticMeshData() const {
                 continue;
             }
             const FStaticMeshLODResources& LODRes = Mesh->GetRenderData()->LODResources[LODToUse];
-
             const uint32 VertCount = LODRes.GetNumVertices();
             if (VertCount < MinVertCountToDump) { // Filter by Vert Count
                 continue;
             }
             const uint32 TriCount = LODRes.GetNumTriangles();
-            GlobalTotalVerts += VertCount;
-            GlobalTotalTris += TriCount;
 
             FString AssetPath = Mesh->GetPathName();
             const int32 Index = AssetPath.Find(KeyFolder);
@@ -150,6 +147,8 @@ void AGpuOptimizationHelper::DumpAllStaticMeshData() const {
 
     // Print
     {
+        int64 GlobalTotalTris = 0;
+        int64 GlobalTotalVerts = 0;
         // Table Header
         UE_LOG(LogTemp, Warning,
             TEXT("%*s | %*s | %*s | %*s | %*s | %*s | %*s | %-*s"),
@@ -165,6 +164,8 @@ void AGpuOptimizationHelper::DumpAllStaticMeshData() const {
         uint8 EntriesDumped = 0;
         for (const auto& Elem : MeshArray) {
             const FMeshInfo& Info = Elem.Value;
+            const int64 TotalVertCount = Info.TotalVerts();
+            const int64 TotalTriCount = Info.TotalTris();
             UE_LOG(LogTemp, Warning,
                 TEXT("%*s | %*d | %*d | %*d | %*d | %*lld | %*lld | %-*s"),
                 NameWidth, *Elem.Key.ToString(),
@@ -172,10 +173,12 @@ void AGpuOptimizationHelper::DumpAllStaticMeshData() const {
                 VertWidth, Info.VertCount,
                 TriWidth, Info.TriCount,
                 CountWidth, Info.Count,
-                TotalVertWidth, Info.TotalVerts(),
-                TotalTriWidth, Info.TotalTris(),
+                TotalVertWidth, TotalVertCount,
+                TotalTriWidth, TotalTriCount,
                 PathWidth, *Info.ShortPath);
             EntriesDumped++;
+            GlobalTotalVerts += TotalVertCount;
+            GlobalTotalTris += TotalTriCount;
             if (EntriesDumped >= MaxEntriesToDump) {
                 break;
             }
